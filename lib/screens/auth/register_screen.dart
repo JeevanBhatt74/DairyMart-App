@@ -17,7 +17,7 @@ class RegisterScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context), // Commit 3: Added navigation links between Login and Register.
         ),
       ),
       body: SingleChildScrollView(
