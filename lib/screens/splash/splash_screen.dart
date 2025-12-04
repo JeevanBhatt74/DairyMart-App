@@ -167,3 +167,5 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     );
   }
 }
+
+// Splash screen animation logic completed.
