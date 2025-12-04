@@ -16,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
   final primaryBlue = const Color(0xFF29ABE2);
 
+// Commit 1: Basic email and password input fields.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
