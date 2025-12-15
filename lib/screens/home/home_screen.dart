@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+// Refactored UI components for better readability
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -10,9 +11,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final primaryBlue = const Color(0xFF29ABE2);
-  int _selectedIndex = 0; // Tracks which tab is active
+  int _selectedIndex = 0; 
 
-  // Handles tab clicks
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -46,8 +46,6 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(icon: const Icon(Icons.shopping_bag_outlined, color: Colors.black87), onPressed: () {}),
         ],
       ),
-      // We will simply switch the body content based on the index later. 
-      // For now, we keep the main dashboard visible.
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -105,18 +103,18 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 25),
 
-              // Categories
+              // Categories - REFACTORED to use CategoryItem widget
               Text("Categories", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
               const SizedBox(height: 15),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildCategoryItem("Milk", Icons.water_drop, primaryBlue),
-                    _buildCategoryItem("Cheese", Icons.circle_outlined, Colors.orange),
-                    _buildCategoryItem("Butter", Icons.breakfast_dining, Colors.yellow[700]!),
-                    _buildCategoryItem("Yogurt", Icons.icecream_outlined, Colors.pink),
-                    _buildCategoryItem("Cream", Icons.cake_outlined, Colors.purpleAccent),
+                    CategoryItem(title: "Milk", icon: Icons.water_drop, color: primaryBlue),
+                    CategoryItem(title: "Cheese", icon: Icons.circle_outlined, color: Colors.orange),
+                    CategoryItem(title: "Butter", icon: Icons.breakfast_dining, color: Colors.yellow[700]!),
+                    CategoryItem(title: "Yogurt", icon: Icons.icecream_outlined, color: Colors.pink),
+                    CategoryItem(title: "Cream", icon: Icons.cake_outlined, color: Colors.purpleAccent),
                   ],
                 ),
               ),
@@ -178,8 +176,8 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedItemColor: primaryBlue,
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
-        currentIndex: _selectedIndex, // UPDATED: Connected to state
-        onTap: _onItemTapped,         // UPDATED: Connected to handler
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: "Favorites"),
@@ -189,8 +187,23 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+}
 
-  Widget _buildCategoryItem(String title, IconData icon, Color color) {
+// --- NEW REFACTORED WIDGET ---
+class CategoryItem extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+
+  const CategoryItem({
+    super.key,
+    required this.title,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(right: 15),
       child: Column(
@@ -199,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
               color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(15)
+              borderRadius: BorderRadius.circular(15),
             ),
             child: Icon(icon, color: color, size: 28),
           ),
