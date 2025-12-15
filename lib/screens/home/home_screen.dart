@@ -48,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16.0),  
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -111,10 +111,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   children: [
                     CategoryItem(title: "Milk", icon: Icons.water_drop, color: primaryBlue),
-                    CategoryItem(title: "Cheese", icon: Icons.circle_outlined, color: Colors.orange),
+                    const CategoryItem(title: "Cheese", icon: Icons.circle_outlined, color: Colors.orange),
                     CategoryItem(title: "Butter", icon: Icons.breakfast_dining, color: Colors.yellow[700]!),
-                    CategoryItem(title: "Yogurt", icon: Icons.icecream_outlined, color: Colors.pink),
-                    CategoryItem(title: "Cream", icon: Icons.cake_outlined, color: Colors.purpleAccent),
+                    const CategoryItem(title: "Yogurt", icon: Icons.icecream_outlined, color: Colors.pink),
+                    const CategoryItem(title: "Cream", icon: Icons.cake_outlined, color: Colors.purpleAccent),
                   ],
                 ),
               ),
