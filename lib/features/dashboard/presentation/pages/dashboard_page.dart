@@ -1,3 +1,4 @@
+// Main dashboard with bottom navigation
 import 'package:dairymart/features/favorites/presentation/pages/favorites_screen.dart';
 import 'package:dairymart/features/orders/presentation/pages/orders_screen.dart';
 import 'package:dairymart/features/profile/presentation/pages/profile_screen.dart';
