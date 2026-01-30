@@ -1,20 +1,33 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // Import your dependencies
-import '../../../../core/providers/shared_preferences_provider.dart';
 import '../../../../core/services/storage/user_session_service.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import 'edit_profile_page.dart'; // <--- IMPORT THE EDIT PROFILE PAGE
+import '../providers/profile_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
+  /// Get the appropriate image provider based on image type
+  ImageProvider<Object>? _getBackgroundImage(dynamic image) {
+    if (image is File) {
+      return FileImage(image);
+    } else if (image is String && image.isNotEmpty) {
+      return NetworkImage(image);
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    const primaryBlue = Color(0xFF29ABE2);
     const bgGrey = Color(0xFFF5F7FA);
+    
+    // Watch the current profile image
+    final currentImage = ref.watch(currentProfileImageProvider);
 
     return Scaffold(
       backgroundColor: bgGrey,
@@ -54,10 +67,13 @@ class ProfileScreen extends ConsumerWidget {
                           color: Colors.white.withOpacity(0.2),
                           shape: BoxShape.circle,
                         ),
-                        child: const CircleAvatar(
+                        child: CircleAvatar(
                           radius: 50,
                           backgroundColor: Colors.white,
-                          backgroundImage: AssetImage('assets/images/logo.png'), // Placeholder
+                          backgroundImage: _getBackgroundImage(currentImage),
+                          child: currentImage == null
+                            ? Icon(Icons.person, size: 50, color: Colors.grey[400])
+                            : null,
                         ),
                       ),
                       const SizedBox(height: 12),
