@@ -1,7 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/utils/snackbar_helper.dart';
+import '../../../../core/services/image/profile_image_service.dart';
+import '../../../../core/services/storage/user_session_service.dart';
+import '../providers/profile_provider.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
   const EditProfilePage({super.key});
@@ -15,11 +19,165 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   final _phoneController = TextEditingController(text: "+977 9812345678");
   
   // We usually don't allow editing email easily, so we just display it
-  final String _email = "jeevan@dairymart.com"; 
+  final String _email = "jeevan@dairymart.com";
+  
+  final ProfileImageService _imageService = ProfileImageService();
+  bool _isUploadingImage = false;
+  bool _showTokenWarning = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // For testing: Print current token status
+    _checkTokenStatus();
+  }
+
+  /// Check if user has a valid token
+  Future<void> _checkTokenStatus() async {
+    final userSessionService = UserSessionService();
+    final token = await userSessionService.getToken();
+    if (token == null) {
+      print('⚠️ WARNING: No auth token found! User must login first.');
+      setState(() {
+        _showTokenWarning = true;
+      });
+    } else {
+      print('✅ Token found (${token.length} chars)');
+      setState(() {
+        _showTokenWarning = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  /// Show dialog to choose camera or gallery
+  Future<void> _showImagePickerDialog() async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            "Select Profile Picture",
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          ),
+          content: Text(
+            "Choose an option",
+            style: GoogleFonts.poppins(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _pickImageFromCamera();
+              },
+              child: Text(
+                "Camera",
+                style: GoogleFonts.poppins(color: const Color(0xFF29ABE2)),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _pickImageFromGallery();
+              },
+              child: Text(
+                "Gallery",
+                style: GoogleFonts.poppins(color: const Color(0xFF29ABE2)),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                "Cancel",
+                style: GoogleFonts.poppins(color: Colors.grey),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Pick image from camera
+  Future<void> _pickImageFromCamera() async {
+    try {
+      setState(() => _isUploadingImage = true);
+      
+      final imageFile = await _imageService.pickImageFromCamera();
+      if (imageFile != null) {
+        await _uploadProfileImage(imageFile);
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackBarHelper.showError(context, "Failed to capture image: ${e.toString()}");
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingImage = false);
+      }
+    }
+  }
+
+  /// Pick image from gallery
+  Future<void> _pickImageFromGallery() async {
+    try {
+      setState(() => _isUploadingImage = true);
+      
+      final imageFile = await _imageService.pickImageFromGallery();
+      if (imageFile != null) {
+        await _uploadProfileImage(imageFile);
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackBarHelper.showError(context, "Failed to select image: ${e.toString()}");
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingImage = false);
+      }
+    }
+  }
+
+  /// Upload the selected image
+  Future<void> _uploadProfileImage(File imageFile) async {
+    try {
+      // Call the Riverpod provider to upload
+      await ref.read(profileUpdateProvider.notifier).uploadProfileImage(imageFile);
+      
+      if (mounted) {
+        SnackBarHelper.showSuccess(context, "Profile picture updated successfully!");
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackBarHelper.showError(context, "Upload failed: ${e.toString()}");
+      }
+    }
+  }
+
+  /// Get the appropriate image provider based on image type
+  ImageProvider<Object>? _getBackgroundImage(dynamic image) {
+    if (image is File) {
+      return FileImage(image);
+    } else if (image is String && image.isNotEmpty) {
+      return NetworkImage(image);
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
     const primaryBlue = Color(0xFF29ABE2);
+    
+    // Watch the current profile image from Riverpod
+    // This will automatically update when the image is uploaded
+    final currentImage = ref.watch(currentProfileImageProvider);
+    print('🎨 EditProfilePage: currentImage = $currentImage');
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -40,6 +198,29 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
+            // Show warning if not authenticated
+            if (_showTokenWarning)
+              Container(
+                margin: const EdgeInsets.only(bottom: 20),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[100],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange, width: 1),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning, color: Colors.orange[800]),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Please login first to upload profile pictures',
+                        style: GoogleFonts.poppins(color: Colors.orange[800]),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             const SizedBox(height: 20),
             
             // --- Profile Image Edit ---
@@ -51,22 +232,38 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     shape: BoxShape.circle,
                     border: Border.all(color: primaryBlue, width: 2),
                   ),
-                  child: const CircleAvatar(
+                  child: CircleAvatar(
                     radius: 50,
-                    backgroundImage: AssetImage('assets/images/logo.png'), // Placeholder
+                    backgroundColor: Colors.grey[100],
+                    backgroundImage: _getBackgroundImage(currentImage),
+                    child: currentImage == null
+                      ? Icon(Icons.person, size: 50, color: Colors.grey[400])
+                      : null,
                   ),
                 ),
                 Positioned(
                   bottom: 0,
                   right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: primaryBlue,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
+                  child: GestureDetector(
+                    onTap: _isUploadingImage ? null : _showImagePickerDialog,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: primaryBlue,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: _isUploadingImage
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Icon(Icons.camera_alt, color: Colors.white, size: 18),
                     ),
-                    child: const Icon(Icons.camera_alt, color: Colors.white, size: 18),
                   ),
                 ),
               ],
@@ -92,13 +289,13 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                   elevation: 2,
                 ),
-                onPressed: () {
-                  // TODO: Implement Save Logic here
+                onPressed: _isUploadingImage ? null : () {
+                  // Text fields are not connected to backend yet in this snippet, 
+                  // but we close the page as the image upload (if any) is done.
                   Navigator.pop(context);
-                  SnackBarHelper.showSuccess(context, "Profile Updated Successfully!");
                 },
                 child: Text(
-                  "Save Changes",
+                  "Done",
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
